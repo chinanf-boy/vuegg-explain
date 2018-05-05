@@ -133,7 +133,7 @@ export default vm
           // ...
 ```
 
-窗口大小一定要大于 `1024px` 不然, 就甩你一脸提示
+窗口大小一定要大于 `1024px` 不然, 就甩你一脸提示⚠️
 
 #### svgicon
 
@@ -151,6 +151,7 @@ export default vm
 1. 通过命令行将 `svg`格式的图片 转成 可以在 vue 使用的`component`
 
 ``` js
+// 自动生成的
 var icon = require('vue-svgicon')
 icon.register({
   'product/vuegg': { // 组件注册-名称
@@ -190,6 +191,59 @@ import '@/assets/icons/product/vuegg'
   },
 ```
 
+---
+
+在找之前
+
+我们说过, 所有的全局状态都是由`vuex`行为控制的
+
+而这个时候, vuex 的布置就有所考究了
+
+总体来说分 `结构`与`功能 `
+
+[这里 >>> 有关vuex-布置-结构](./store.conformation.md)
+
+那么下面只讲 功能如何实现
+
+---
+
+##### loadVueggProject
+
+`client/src/store/actions/projectAct.js`
+
+``` js
+ [types.loadVueggProject]: async function ({ state, dispatch, commit }, { origin, userName, repoName, content }) {
+    commit(types._toggleBlockLoadingStatus, true)
+
+    let project
+    switch (origin) {
+      case 'local': project = await localforage.getItem('local-checkpoint'); break
+      case 'pc': project = content; break
+      case 'github':
+        // const token = await localforage.getItem('gh-token')
+        const owner = userName || state.oauth.authenticatedUser.login
+        const repo = repoName || state.project.title.replace(/[^a-zA-Z0-9-_]+/g, '-')
+
+        // let ghFile = await api.getVueggProject(owner, repo, token)
+        let ghFile = await api.getVueggProject(owner, repo)
+
+        ghFile
+          ? project = ghFile.data.data.content
+          : showSnackbar(owner + '/' + repo + ' is not a valid repository')
+        break
+      default: project = await localforage.getItem('local-checkpoint')
+    }
+
+    if (project) {
+      store.replaceState(newState(JSON.parse(atob(project))))
+      commit(types.addProject)
+      if (origin === 'github') localforage.setItem('gh-repo-name', repoName)
+
+      await dispatch(types.checkAuth)
+    }
+    commit(types._toggleBlockLoadingStatus, false)
+  },
+```
 ---
 
 #### redoundo
