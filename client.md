@@ -207,24 +207,91 @@ import '@/assets/icons/product/vuegg'
 
 ---
 
-##### loadVueggProject
+我想当整个应用的状态都显现出来, 所有的行为都会比较明了
+
+#### newState
+
+``` js
+{// newState (project)
+    app: {
+      isLoading: false,   // 顶部加载条
+      isBlockLoading: false, // 全屏加载
+      hasChanges: false,
+      isSyncing: false,
+      canUndo: false, // 可以撤销
+      canRedo: false,  // 可以复原
+      pageDialog: { 
+        isNew: true,
+        isOpen: false
+      },
+      selectedPage: null,
+      selectedElements: []
+    },
+    oauth: {
+      isAuthorized: false,
+      authenticatedUser: null
+    },
+    project: project || newProject('my vuegg project')
+
+}
+{   
+// newProject('title')
+    id: shortid.generate(),
+    title: title,
+    components: [],
+    pages: [newPage('Home', '/')]
+  }
+
+  {
+//newPage(name, path, height, width)
+    id: shortid.generate(),
+    name: name,
+    path: path,
+    width: width || '100%',
+    height: height || '100%',
+    styles: {
+      '--mdc-theme-primary': '#673ab7',
+      '--mdc-theme-secondary': '#f44336',
+      '--mdc-theme-background': '#ffffff',
+      'position': 'relative',
+      'margin': 'auto',
+      'background-color': '#ffffff',
+      'overflow': 'hidden'
+    },
+    classes: [],
+    children: []
+  }
+```
+
+---
+
+#### loadVueggProject
 
 `client/src/store/actions/projectAct.js`
 
+有三种加载`vuegg`项目的方式
+
+1. 本地缓存 `loacl` 初始化
+
+2. 被下载的zip `pc`
+
+3. github 项目 中被保存的 `github`
+
+<details>
+
+
 ``` js
  [types.loadVueggProject]: async function ({ state, dispatch, commit }, { origin, userName, repoName, content }) {
-    commit(types._toggleBlockLoadingStatus, true)
+    commit(types._toggleBlockLoadingStatus, true) // 加载中, 控制前端loading
 
     let project
     switch (origin) {
       case 'local': project = await localforage.getItem('local-checkpoint'); break
       case 'pc': project = content; break
       case 'github':
-        // const token = await localforage.getItem('gh-token')
         const owner = userName || state.oauth.authenticatedUser.login
         const repo = repoName || state.project.title.replace(/[^a-zA-Z0-9-_]+/g, '-')
 
-        // let ghFile = await api.getVueggProject(owner, repo, token)
         let ghFile = await api.getVueggProject(owner, repo)
 
         ghFile
@@ -234,17 +301,163 @@ import '@/assets/icons/product/vuegg'
       default: project = await localforage.getItem('local-checkpoint')
     }
 
-    if (project) {
+    if (project) { // 有没有本地缓存阿
+
+    //替换 store 的根状态，仅用状态合并或时光旅行调试。
       store.replaceState(newState(JSON.parse(atob(project))))
-      commit(types.addProject)
-      if (origin === 'github') localforage.setItem('gh-repo-name', repoName)
+
+      commit(types.addProject)   // debug 信息
+      if (origin === 'github') localforage.setItem('gh-repo-name', repoName) 
+      // 如果是github项目
+      // 添加本地缓存
 
       await dispatch(types.checkAuth)
     }
-    commit(types._toggleBlockLoadingStatus, false)
+    commit(types._toggleBlockLoadingStatus, false)// 加载完
   },
 ```
+
+整个`vuegg`初始化时候, 就是 `local` 的拉
+
+- [atob 解密](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/atob)
+
 ---
+
+</details>
+
+### router-view
+
+#### Editor
+
+好了, App.vue 做得事情就这么多, 我们进到路由去吧
+
+`client/src/router/index.js`
+
+``` js
+      path: '/',
+      name: 'editor',
+      component: Editor
+```
+
+刚进来的时候, 就是正规的可视化编辑拉
+
+`client/src/views/Editor.vue`
+
+
+``` js
+import Headegg from '@/components/editor/header'
+import Drawegg from '@/components/editor/drawer'
+import Mainegg from '@/components/editor/main'
+import BlockLoader from '@/components/editor/common/loader/BlockLoader'
+import PageDialog from '@/components/editor/dialogs/PageDialog'
+import LoadDialog from '@/components/editor/dialogs/LoadDialog'
+import UploadDialog from '@/components/editor/dialogs/UploadDialog'
+import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
+```
+
+分好几个块
+
+- [Headegg](./editor.headegg.md)
+
+> 导航, 预览, 删除, 项目加载等等
+
+<details>
+
+![Headegg img](./imgs/headegg.png)
+
+</details>
+
+---
+
+- [Drawegg](./editor.drawegg.md)
+
+> 拖拽元素栏, 元素设置, 页面加减
+
+<details>
+
+![Drawegg img](./imgs/drawegg.png)
+
+</details>
+
+---
+
+- [Mainegg](./editor.mainegg.md)
+
+> 画布栏
+
+<details>
+
+![Mainegg img](./imgs/mainegg.png)
+
+</details>
+
+---
+
+- [BlockLoader](./editor.blockloader.md)
+
+> 全屏加载
+
+<details>
+
+![BlockLoader img](./imgs/blockloader.png)
+
+</details>
+
+---
+
+- [PageDialog](./editor.pagedialog.md)
+
+> 页面名称-Dialog
+
+<details>
+
+![PageDialog img](./imgs/pagedialog.png)
+
+</details>
+
+---
+
+- [LoadDialog](./editor.loaddialog.md)
+
+> 载入github项目-Dialog
+
+<details>
+
+![LoadDialog img](./imgs/loaddialog.png)
+
+</details>
+
+---
+
+- [UploadDialog](./editor.uploaddialog.md)
+
+> 上传-Dialog
+
+<details>
+
+![UploadDialog img](./imgs/uploaddialog.png)
+
+</details>
+
+---
+
+- [ConfirmDialog](./editor.confirmdialog.md)
+
+> 是否删除-Dialog
+
+<details>
+
+![ConfirmDialog img](./imgs/confirmdialog.png)
+
+</details>
+
+---
+
+这里面的精华就在于, `Drawegg-🖌️`-`Mainegg-📃`
+
+
+
+
 
 #### redoundo
 
