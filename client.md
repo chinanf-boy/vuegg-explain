@@ -343,7 +343,44 @@ import '@/assets/icons/product/vuegg'
 
 `client/src/views/Editor.vue`
 
+``` js
+// 我们先看看, 新建实例做了什么
+  data: function () {
+    return {
+      notScrolled: true
+    }
+  },
+  created: function () {
+    this.$root.$on('rebaseState', this.rebaseState) // <=====
+  },
+  beforeDestroy: function () {
+    this.$root.$off('rebaseState', this.rebaseState)
+  },
+  computed: {
+    ...mapState({
+      loading: state => state.app.isLoading
+    })
+  },
+  methods: {
+    scrollFunction (e) {
+      this.notScrolled = (e.target.scrollTop === 0)
+    },
 
+    rebaseState () { // 检验
+      this.checkAuth()
+      this.checkLastSaved()
+      this.rebaseSelectedElements()
+    },
+
+    ...mapActions([rebaseSelectedElements, checkAuth, checkLastSaved])
+  }
+}
+```
+
+
+---
+
+#### Editor-Components
 ``` js
 import Headegg from '@/components/editor/header'
 import Drawegg from '@/components/editor/drawer'
@@ -460,6 +497,8 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 
 #### redoundo
+
+`client/src/mixins/redoundo.js`
 
 > 制作-可视化-vue-网页, 我们需要回退和前进功能
 
