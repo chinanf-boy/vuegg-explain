@@ -400,7 +400,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 <details>
 
-![Headegg img](./imgs/headegg.png)
+![Headegg img](./imgs/editor-header.png)
 
 </details>
 
