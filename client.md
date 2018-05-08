@@ -397,7 +397,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 分好几个块
 
-- [x] [Headegg](./editor.headegg.md)
+- [x] [Headegg](./editor.headgg.md)
 
 > 导航, 预览, 删除, 项目加载等等
 
