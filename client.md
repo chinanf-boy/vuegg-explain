@@ -4,6 +4,9 @@
 
 ---
 
+- [x] [根组件初始化](#package.json)
+- [x] [Editor-编辑页面](#Editor)
+- [] [preview-预览页面](./preview.md)
 
 ---
 
@@ -394,7 +397,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 分好几个块
 
-- [Headegg](./editor.headegg.md)
+- [x] [Headegg](./editor.headegg.md)
 
 > 导航, 预览, 删除, 项目加载等等
 
@@ -406,7 +409,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [Drawegg](./editor.drawegg.md)
+- [ ] [Drawegg](./editor.drawegg.md)
 
 > 拖拽元素栏, 元素设置, 页面加减
 
@@ -418,7 +421,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [Mainegg](./editor.mainegg.md)
+- [ ] [Mainegg](./editor.mainegg.md)
 
 > 画布栏
 
@@ -430,7 +433,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [BlockLoader](./editor.blockloader.md)
+- [ ] [BlockLoader](./editor.blockloader.md)
 
 > 全屏加载
 
@@ -442,7 +445,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [PageDialog](./editor.pagedialog.md)
+- [ ] [PageDialog](./editor.pagedialog.md)
 
 > 页面名称-Dialog
 
@@ -454,7 +457,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [LoadDialog](./editor.loaddialog.md)
+- [ ] [LoadDialog](./editor.loaddialog.md)
 
 > 载入github项目-Dialog
 
@@ -466,7 +469,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [UploadDialog](./editor.uploaddialog.md)
+- [ ] [UploadDialog](./editor.uploaddialog.md)
 
 > 上传-Dialog
 
@@ -478,7 +481,7 @@ import ConfirmDialog from '@/components/editor/dialogs/ConfirmDialog'
 
 ---
 
-- [ConfirmDialog](./editor.confirmdialog.md)
+- [ ] [ConfirmDialog](./editor.confirmdialog.md)
 
 > 是否删除-Dialog
 

@@ -1,16 +1,20 @@
 ## drawegg
 
-导航分三部分
-
-1. [logo](#logo)
-
-2. [操作行为](#操作行为)
-
-3. [用户](#用户)
+- [ ] [ElementsMenu](#ElementsMenu)
+- [ ] [settings](#settings-menu)
+- [ ] [pages](#pages-menu)
 
 ---
 
-![drawegg editor](./imgs/editor-drawegg.png)
+<details>
+
+<summary>默认界面</summary>
+
+
+<img src="./imgs/editor-drawer-default.png" alt="drawegg editor" width="30%" />
+
+</details>
+
 
 ---
 
@@ -91,6 +95,14 @@
 ```
 
 ### ElementsMenu
+
+<details>
+
+元素-默认界面
+
+<img src="./imgs/editor-drawer-default.png" alt="drawegg editor" width="30%" />
+
+</details>
 
 ``` js
 // js
@@ -182,8 +194,30 @@ import ElementsMenu from './elements/ElementsMenu'
 
 
 
-
-
 ### settings-menu
 
+<details>
+
+<summary>setting-默认界面</summary>
+
+<img src="./imgs/drawer-setting.png" alt="drawegg setting" width="30%" />
+
+</details>
+
+<details>
+
+<summary>setting-选择元素后-界面</summary>
+
+![drawegg editor](./imgs/drawer-setting-se.png)
+
+</details>
+
 ### pages-menu
+
+<details>
+
+<summary>page-默认界面</summary>
+
+<img src="./imgs/drawer-page.png" alt="drawegg page" width="30%" />
+
+</details>
