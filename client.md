@@ -4,9 +4,9 @@
 
 ---
 
-- [x] [根组件初始化](#package.json)
-- [x] [Editor-编辑页面](#Editor)
-- [] [preview-预览页面](./preview.md)
+- [x] [根组件初始化](#packagejson)
+- [x] [Editor-编辑页面](#editor)
+- [ ] [preview-预览页面](./preview.md)
 
 ---
 
