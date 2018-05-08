@@ -44,6 +44,18 @@
 
 ---
 
+在开始进入之前
+
+我们过一下
+
+`index` -> `stage` -> `mr-container` -> for `page.children` {
+  `stage-el`  <= `mr-el -> element` <- 有时stage-el-孩子
+}
+
+
+
+---
+
 ### Stage
 
 <details>
@@ -88,13 +100,18 @@
 
 这里各种@操作
 
+
 ---
 
 在这之前, 我们看到 `mr-container` 组件
 
 主要是把 `快捷键`与`对应的@***操作`联系起来
 
-- [ ] [mr-container explain](./mr-container.md)
+而且, 所有的操作都是通过, `mr-container` 先的
+
+- [x] [mr-container explain](./mr-container.md) <==== 先看这里
+
+同时也是, 点按拖动, 放下的起点
 
 ---
 
@@ -102,22 +119,24 @@
 - [x] [`@selectstop="selectStopHandler"`](#selectstop)  括起来一/多个元素
 
 需要选择
-- [ ] [`@arrows="arrowsHandler"`](#arrows)  箭头移动
-- [ ] [`@moving="movingHandler"`](#moving)  移动样式变化
-- [ ] [`@movestop="moveStopHandler"`](#movestop)  移动停止, 样式变化
-- [ ] [`@resizestop="resizeStopHandler"`](#resizestop)  大小变化
-- [ ] [`@clearselection="clearSelectionHandler"`](#clearselection)  清空选择
-- [ ] [`@delete="deleteHandler"`](#delete)  删除
-- [ ] [`@copy="copyHandler"`](#copy)  复制
-- [ ] [`@cut="cutHandler"`](#cut)  剪切
-- [ ] [`@paste="pasteHandler"`](#paste)  粘贴
+- [x] [`@arrows="arrowsHandler"`](#arrows)  箭头移动
+- [x] [`@moving="movingHandler"`](#moving)  移动样式变化
+- [x] [`@movestop="moveStopHandler"`](#movestop)  移动停止, 样式变化
+- [x] [`@resizestop="resizeStopHandler"`](#resizestop)  大小变化
+- [x] [`@clearselection="clearSelectionHandler"`](#clearselection)  清空选择
+- [x] [`@delete="deleteHandler"`](#delete)  删除
+- [x] [`@copy="copyHandler"`](#copy)  复制
+- [x] [`@cut="cutHandler"`](#cut)  剪切
+- [x] [`@paste="pasteHandler"`](#paste)  粘贴
 
 已经按住了
 - [x] [`@drop="dropHandler"`](#drop)  放下 
 
 不需要选择
-- [ ] [`@undo="$root.$emit('undo')"`](#undo) 回退
-- [ ] [`@redo="$root.$emit('redo')"`](#redo) 复原
+- [x] [`@undo="$root.$emit('undo')"`](#undo) 回退
+- [x] [`@redo="$root.$emit('redo')"`](#redo) 复原
+
+[>> $emit('undo')+$emit('redo')](./readme.md#redoundo)
 
 ---
 
@@ -166,14 +185,72 @@
 
 ---
 
-### Moving
 
->
+### arrows
+
+> 在选择了元素 , 通过箭头按键移动
 
 <details>
 
 ``` js
+    arrowsHandler ({direction, shiftKey}) {
+      if (this.selectedElements.length > 0) { // 有选择
+        let diff = shiftKey ? 10 : 1
 
+        let addedTop = 0
+        let addedBottom = 0
+        let addedLeft = 0
+        let addedRight = 0
+
+        switch (direction) {
+          case 'up': addedTop -= diff; addedBottom += diff; addedLeft = addedRight = null; break
+          case 'down': addedBottom -= diff; addedTop += diff; addedLeft = addedRight = null; break
+          case 'left': addedLeft -= diff; addedRight += diff; addedTop = addedBottom = null; break
+          case 'right': addedRight -= diff; addedLeft += diff; addedTop = addedBottom = null; break
+        }
+
+        this.selectedElements.map(el => {
+          let compTop = getComputedProp('top', el)
+          let compBottom = getComputedProp('bottom', el)
+          let compLeft = getComputedProp('left', el)
+          let compRight = getComputedProp('right', el)
+
+          let top = (addedTop && ((compTop + addedTop) >= 0) && ((compBottom + addedBottom) >= 0))
+            ? (compTop + addedTop) : null
+          let bottom = (addedBottom && ((compBottom + addedBottom) >= 0) && ((compTop + addedTop) >= 0))
+            ? (compBottom + addedBottom) : null
+          let left = (addedLeft && ((compLeft + addedLeft) >= 0) && ((compRight + addedRight) >= 0))
+            ? (compLeft + addedLeft) : null
+          let right = (addedRight && ((compRight + addedRight) >= 0) && ((compLeft + addedLeft) >= 0))
+            ? (compRight + addedRight) : null
+
+          if (top || bottom || left || right) {
+            this.moveElement({ elId: el.id, pageId: this.page.id, top, bottom, left, right })
+          }
+        })
+        this.rebaseSelectedElements() // 每个选择元素 重新装载 全局存储
+      }
+    },
+```
+</details>
+
+---
+
+### Moving
+
+> 移动时候, 是否容器的计算 是一个鼠标样式变化
+
+<details>
+
+``` js
+    movingHandler (absMouseX, absMouseY) {
+      this.dropContainer = this.getContaineggOnPoint(absMouseX, absMouseY)
+// 1. 鼠标位置所有的元素
+// 2. 确定是 容器 且 不是组件 且 不是父 且 不是自己/子
+
+
+      this.toggleDroppableCursor(!!this.dropContainer) // 是否能添加到容器 鼠标显示➕
+    },
 ```
 
 </details>
@@ -182,12 +259,31 @@
 
 ### Movestop
 
->
+> 移动停下后， 计算是否 脱离父辈
 
 <details>
 
 ``` js
+    moveStopHandler (moveStopData) {
+      const containegg = this.getContaineggOnPoint(moveStopData.absMouseX, moveStopData.absMouseY)
+      
+      const parentId = containegg ? containegg.id : null
+// parentId 如果有 证明要 跳出来
+      moveStopData.moveElData.map(moveData => this.moveElement({
+// moveElement 全局 action
+// 1. -改变元素父辈
+// 2. 改变 鼠标与原位置的计算位置
+        ...moveData,
+        pageId: this.page.id,
+        parentId,
+        mouseX: moveStopData.relMouseX,
+        mouseY: moveStopData.relMouseY
+      }))
 
+      this.rebaseSelectedElements()
+      this.toggleDroppableCursor(false)
+      this.dropContainer = null
+    },
 ```
 
 </details>
@@ -196,26 +292,17 @@
 
 ### Resizestop
 
->
+> 缩放 停止后, 前端样式, 已经变化， 我们还要把 全局存储改变
 
 <details>
 
 ``` js
-
-```
-
-</details>
-
----
-
-### Selectstop
-
->
-
-<details>
-
-``` js
-
+    resizeStopHandler (resStopData) {
+      resStopData.map(resElData => this.resizeElement({...resElData, pageId: this.page.id}))
+// resizeElement
+// 对每个元素 更新
+      this.rebaseSelectedElements()
+    },
 ```
 
 </details>
@@ -224,12 +311,18 @@
 
 ### Clearselection
 
->
+> 清空 全局选择元素
 
 <details>
 
-``` js
+`mr-container` 运行 `$emit('clearselection')`
 
+`@clearselection="clearSelectionHandler"`
+
+``` js
+    clearSelectionHandler () {
+      if (this.selectedElements.length > 0) this._clearSelectedElements()
+    },
 ```
 
 </details>
@@ -238,12 +331,16 @@
 
 ### Delete
 
->
+> 删除
 
 <details>
 
 ``` js
-
+    deleteHandler () {
+      if (this.selectedElements.length > 0) {
+        this.selectedElements.map(el => this.removeElement({page: this.page, elId: el.id}))
+      }
+    },
 ```
 
 </details>
@@ -252,12 +349,17 @@
 
 ### Copy
 
->
+> 组件缓存 clipboard 先放好
 
 <details>
 
 ``` js
-
+    copyHandler () {
+      if (this.selectedElements.length > 0) {
+        this.clipboard = []
+        this.selectedElements.map(el => this.clipboard.push(cloneDeep(el)))
+      }
+    },
 ```
 
 </details>
@@ -266,12 +368,20 @@
 
 ### Cut
 
->
+> 先放好, 再移除
 
 <details>
 
 ``` js
-
+    cutHandler () {
+      if (this.selectedElements.length > 0) {
+        this.clipboard = []
+        this.selectedElements.map(el => {
+          this.clipboard.push(cloneDeep(el))
+          this.removeElement({page: this.page, elId: el.id})
+        })
+      }
+    },
 ```
 
 </details>
@@ -280,12 +390,18 @@
 
 ### Paste
 
->
+> 将缓存, 放入全局
 
 <details>
 
 ``` js
-
+    pasteHandler () {
+      if (this.clipboard.length > 0) {
+        this.clipboard.map(el => {
+          this.registerElement({pageId: this.page.id, el, global: el.global})
+        })
+      }
+    },
 ```
 
 </details>
@@ -453,6 +569,36 @@ export default {
   },
 ```
 
+### getContaineggOnPoint
+### toggleDroppableCursor
+
+``` js
+    getContaineggOnPoint (x, y) {
+      const movingEggs = this.selectedElements
+      const parentsIds = movingEggs.map(egg => egg.id.substring(0, egg.id.lastIndexOf('.')))
+      const commonParentId = parentsIds.every((val, i, arr) => val === arr[0]) ? parentsIds[0] : null
+      const elementsOnPoint = elementsFromPoint(x, y)
+
+      for (let el of elementsOnPoint) {
+        if (el.id === commonParentId) return null
+        if ((el.dataset.mrContainer) ||
+          (
+            (el.dataset.containegg) &&
+            (!el.dataset.componegg) &&
+            (movingEggs.every(egg => !el.id.includes(egg.id)))
+          )
+        ) return el
+      }
+      return null
+    },
+
+    toggleDroppableCursor (isDroppable) {
+      isDroppable
+        ? document.documentElement.classList.add('droppable')
+        : document.documentElement.classList.remove('droppable')
+    },
+```
+
 ### activated
 
 其实又是一个 `on-emit`
@@ -466,9 +612,11 @@ export default {
     @mousedown.meta.capture="e => $emit('activated', e)"
     @mousedown.ctrl.capture="e => $emit('activated', e)"
 ```
+```js
+// StageEl.vue
+        'on': { activated: this.activatedHandler }
 
----
-
+```
 ``` js
   computed: {
     isActive () {
@@ -480,7 +628,7 @@ export default {
     },
 
     ...mapState({
-      selectedElements: state => state.app.selectedElements,
+      selectedElements: state => state.app.selectedElements, // 点击元素这个会变
       projectComponents: state => state.project.components
     })
   },

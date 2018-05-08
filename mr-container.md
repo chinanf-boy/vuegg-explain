@@ -1,16 +1,72 @@
 ## mr-container
 
-
+快捷键和点选操作
 
 `editor/common/mr-vue/MrContainer.vue`
 
 ---
 
-- [x] [on/emit](#on-emit)
+1. [x] [on/emit](#on-emit)
+2. [x] [鼠标点击](#mouseDown)
+
+> 三种方式都是从[0. 鼠标点击](#mouseDown)开始的
+
+- 选择
+
+        
+    1. [this.$emit('clearselection')](./editor.main.md#clearselection) [renderSelectionArea](#renderselectionarea)
+    2. 注册 [mousemove](#mousemovehandler) - [mouseup](#mouseuphandler)
+    3. `this.$emit('selectstop', this.selectStopData())` - [selectstop](./editor.main.md#selectstop) [selectStopData](#selectstopdata)
+    4. 初始化 组件数据
+    5. 删除 `mousemove` `mouseup`
+
+- 移动
+
+    1. [this.getParentMr(e.target)](#getparentmr)
+    2. 注册 [mousemove](#mousemovehandler) - [mouseup](#mouseuphandler)
+    3. `this.mrElements.map(mrEl => this.moveElementBy(mrEl, offX, offY))` - [this.moveElementBy](#moveelementby)
+    4. `this.$emit('moving', this.currentAbsPos.x, this.currentAbsPos.y)` - [moving](./editor.main.md#moving) 
+    5. `this.$emit('movestop', this.moveStopData())` - [movestop](./editor.main.md#movestop) - [moveStopData](#movestopdata)
+    6. 初始化 组件数据    
+    7. 删除 `mousemove` `mouseup`
+
+- 缩放
+
+   1. `e.target.classList[1]` [哪个缩放角选择](./mrel.md#handles)
+   2. 注册 [mousemove](#mousemovehandler) - [mouseup](#mouseuphandler)
+   3. `this.mrElements.map(mrEl => {
+          if (!mrEl.children[0].dataset.global) this.resizeElementBy(mrEl, offX, offY)
+        })` - [resizeElementBy](#resizeelementby)
+   4. `this.$emit('resizestop', this.resizeStopData())`  -  [resizestop](./editor.main.md#resizestop) - [resizeStopData](#resizestopdata)
+   5. 初始化 组件数据    
+   6. 删除 `mousemove` `mouseup`
+
+#### 总结
+
+1⃣️ 看用户`点啥`
+2⃣️ 按住期间, 鼠标位置变化, `视图`先更新
+3⃣️ 点按结束, 我们通过`$emit`把`全局存储`更新
+剩下的就是快捷键
+
+<details>
+
+
+- [x] [mouseDown](#mousedown)
+- [x] [mouseUpHandler](#mouseuphandler)
+- [x] [mouseMoveHandler](#mousemovehandler)
+- [x] [renderSelectionArea](#renderselectionarea)
+- [x] [resizeElementBy](#resizeelementby)
+- [x] [moveElementBy](#moveelementby)
+- [x] [fixPosition](#fixposition)
+- [x] [moveStopData](#movestopdata)
+- [x] [resizeStopData](#resizestopdata)
+- [x] [selectStopData](#selectstopdata)
+
+</details>
 
 ---
 
-``` js
+``` html
 <template>
   <div data-mr-container="true"
     class="mr-container"
@@ -35,8 +91,10 @@
     @drop.prevent="e => $emit('drop', e)"
     @dragover.prevent
   >
-    <slot></slot>
+    <slot></slot> 
+    <!-- 插槽 -->
     <div ref="selectionArea" v-show="selecting" class="selection-area"></div>
+    <!-- 记录 划过的矩形 -->
   </div>
 </template>
 
@@ -93,13 +151,14 @@
     @keydown.meta.shift.90.exact.stop.prevent="$emit('redo')"
 ```
 
+---
 
-
+### 初始化
 
 ``` js
 export default {
   name: 'mr-container',
-  props: ['activeElements'],
+  props: ['activeElements'], // 选择了的元素
   data: function () {
     return {
       initialAbsPos: {x: 0, y: 0},
@@ -118,20 +177,30 @@ export default {
     }
   },
   methods: {
-    mouseDownHandler (e) {
+
+```
+
+### mouseDown
+
+每一次在在画布的点击都来到这里
+
+每一次按下都是一次重新计算
+
+``` js
+    mouseDownHandler (e) { // 按下
       let isMrs = false
       this.initialAbsPos = this.currentAbsPos = this.getMouseAbsPoint(e)
       this.initialRelPos = this.currentRelPos = this.getMouseRelPoint(e)
 
-      if (e.target.dataset.mrContainer) {
+      if (e.target.dataset.mrContainer) { // 选择了画布
         this.$emit('clearselection')
         this.renderSelectionArea({x: -1, y: -1}, {x: -1, y: -1})
         isMrs = this.selecting = true
-      } else if (e.target.dataset.mrHandle) {
+      } else if (e.target.dataset.mrHandle) { // 选择了 元素 的 缩放角
         isMrs = this.resizing = true
-        this.handle = e.target.classList[1]
+        this.handle = e.target.classList[1] // 哪个缩放角
         // this.$emit('resizestart')
-      } else if (this.getParentMr(e.target)) {
+      } else if (this.getParentMr(e.target)) { // 如果有 父辈 除了 画布
         isMrs = this.moving = true
         // this.$emit('movestart')
       }
@@ -142,8 +211,15 @@ export default {
       }
     },
 
-    mouseUpHandler (e) {
-      // Saves the scroll position before giving focus and sets it back after focus
+```
+
+### mouseUpHandler
+
+放下
+
+``` js
+    mouseUpHandler (e) { // 放开
+      // 在对焦之前保存滚动位置并将其重新设置
       const mainContainer = document.getElementById('main')
       let currentScroll = mainContainer.scrollTop
       this.$el.focus()
@@ -153,6 +229,8 @@ export default {
         if (this.resizing) this.$emit('resizestop', this.resizeStopData())
         else if (this.moving) this.$emit('movestop', this.moveStopData())
         else if (this.selecting) this.$emit('selectstop', this.selectStopData())
+        
+        // selectstop 会让 在 选择矩形内的 元素 进入全局存储
       }
 
       this.moving = false
@@ -164,6 +242,13 @@ export default {
       document.documentElement.removeEventListener('mouseup', this.mouseUpHandler, true)
     },
 
+```
+
+### mouseMoveHandler
+
+按住移动时
+
+``` js
     mouseMoveHandler (e) {
       const lastAbsX = this.currentAbsPos.x
       const lastAbsY = this.currentAbsPos.y
@@ -174,21 +259,30 @@ export default {
       let offX = this.currentAbsPos.x - lastAbsX
       let offY = this.currentAbsPos.y - lastAbsY
 
-      if (this.resizing) {
+      if (this.resizing) { // 重新计算
         this.mrElements.map(mrEl => {
           if (!mrEl.children[0].dataset.global) this.resizeElementBy(mrEl, offX, offY)
         })
         // this.$emit('resizing')
-      } else if (this.moving) {
+      } else if (this.moving) { // 
         this.mrElements.map(mrEl => this.moveElementBy(mrEl, offX, offY))
+        // 还要计算一下 要脱离父辈吗
         this.$emit('moving', this.currentAbsPos.x, this.currentAbsPos.y)
       } else {
+        // 重新计算 更新矩形 不过说真的 这里好像不怎么需要
         this.renderSelectionArea(this.initialRelPos, this.currentRelPos)
         // this.$emit('selecting')
       }
     },
 
-    renderSelectionArea (initPoint, endPoint) {
+```
+
+### renderSelectionArea
+
+实时更新 划过的矩形
+
+```  js 
+      renderSelectionArea (initPoint, endPoint) {
       const minX = Math.min(initPoint.x, endPoint.x)
       const maxX = Math.max(initPoint.x, endPoint.x)
       const minY = Math.min(initPoint.y, endPoint.y)
@@ -200,6 +294,13 @@ export default {
       this.$refs.selectionArea.style.height = maxY - minY + 'px'
     },
 
+```
+
+### resizeElementBy
+
+实时计算并更新缩放
+
+``` js
     resizeElementBy (el, offX, offY) {
       const parentCompStyle = window.getComputedStyle(this.getParentMr(el))
       const elCompStyle = window.getComputedStyle(el)
@@ -252,6 +353,13 @@ export default {
       el.style.right = (el.style.right !== 'auto') ? newRight + 'px' : 'auto'
     },
 
+```
+
+### moveElementBy
+
+元素距离-实时更新
+
+``` js
     moveElementBy (el, offX, offY) {
       const elCompStyle = window.getComputedStyle(el)
 
@@ -273,6 +381,13 @@ export default {
         : 'auto'
     },
 
+```
+
+### fixPosition
+
+如果不是 `auto` 需要计算
+
+``` js
     fixPosition (el, val, prop) {
       if (val < 0) return 0
 
@@ -288,15 +403,22 @@ export default {
       return val
     },
 
+```
+
+###getParentMr
+
+获得父辈,  画布 或者 另一个 mrEl 容器
+
+``` js
     getParentMr (element) {
       let parentMr = null
       let currentMr = element
 
       while (parentMr === null) {
         if (currentMr === null || currentMr.parentElement === null) break
-        else if (currentMr.dataset.mrContainer) parentMr = currentMr
+        else if (currentMr.dataset.mrContainer) parentMr = currentMr // 画布
         else if (currentMr.parentElement.dataset.mrEl) parentMr = currentMr.parentElement
-
+        // 另一个 mrEl 容器
         currentMr = currentMr.parentElement
       }
       return parentMr
@@ -314,6 +436,14 @@ export default {
       return {x, y}
     },
 
+```
+
+### moveStopData
+
+整理 元素 位置 和 鼠标位置
+
+
+``` js
     moveStopData () {
       return {
         moveElData: this.mrElements.map(el => {
@@ -340,6 +470,13 @@ export default {
       }
     },
 
+```
+
+### resizeStopData
+
+每个 选择元素 的ID和位置数据
+
+``` js
     resizeStopData () {
       return this.mrElements.map(el => {
         return {
@@ -366,6 +503,13 @@ export default {
       })
     },
 
+```
+
+### selectStopData
+
+用实时更新的 矩形 规范 数据
+
+``` js
     selectStopData () {
       return {
         top: parseInt(this.$refs.selectionArea.style.top),
