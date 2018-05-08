@@ -145,7 +145,7 @@ import ElementsMenu from './elements/ElementsMenu'
 
 2. 点击 和 按住开始 操作
 
-- 点击:click
+#### click
 
 ``` js
     addItemToStage (e, item) {
@@ -163,7 +163,7 @@ import ElementsMenu from './elements/ElementsMenu'
 
 ---
 
-- 按住开始:dragstart
+#### dragstart
 
 `e` 是 拖动的 DOM实例
 `item` 是需要的可视化元素
@@ -184,7 +184,7 @@ import ElementsMenu from './elements/ElementsMenu'
 
 一个完整的拖动放下, 是需要两个区块的, 现在我们拿起来了,
 
-我们会再画布那里设置放下 [跳着去看看画布的放下也可以](./editor.main.md#Drop)
+我们会再画布那里设置放下 [跳着去看看画布的放下也可以](./editor.main.md#drop)
 
 [mdn-dataTransfer](https://developer.mozilla.org/zh-CN/docs/Web/API/DataTransfer#setData.28.29)
 
